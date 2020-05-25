@@ -1,5 +1,8 @@
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
+
 
 # get the data
 r = requests.get('https://vnexpress.net/')
@@ -37,29 +40,9 @@ print(a_tag['title'])
 data = []
 articles = soup.find_all('article', {'class':'item-news'})
 
-for article in articles:
-        d = {'title':'', 'description': '', 'url': '', 'image_url': ''}
-    try:
-        d['title'] = article.a['title']
-        d['description'] = article.p.text
-        d['url'] = article.a['href']
-        d['image_url'] = article.img['scr']
-        data.append(d)
-
-    except:
-        pass
 
 # Package into Functions
 
-def get_url(url):
-    """Get parsed HTML from url
-    Input: url to the webpage
-    Output: Parsed HTML text of the webpage
-    """
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, 'html.parse')
-
-    return soup
 
 
 def scrape_vnexpress(url='https://vnexpress.net/'):
@@ -67,31 +50,32 @@ def scrape_vnexpress(url='https://vnexpress.net/'):
     Input: url to the homepage. Default: https://vnexpress.net/
     Output: A list containing scraped data of all articles
     """
-    soup = get_url(url)
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, 'html.parser')
 
-    articles = soup.find_all('articles', {'class':'item-news'})
+    articles = soup.find_all('article', {'class':'item-news'})
 
-
+    data =[]
     for article in articles:
-        d = {'title': '',
-            'description': '',
-            'url': '',
-            'image_url': ''
-            }
+        d = {'title': '', 'url': '', 'image_url': '', 'description': ''}
         try:
             d['title'] = article.a['title']
-            d['description'] = article.p.text
             d['url'] = article.a['href']
-            d['image_url'] = article.img['scr']
+            d['description'] = article.p.text.replace('\xa0', '').strip('\n')
+            
+            if article.img:
+                d['image_url'] = article.img['src']
             data.append(d)
 
         except:
             pass
-
+    
     return data
 
 
-
+data = scrape_vnexpress()
+df = pd.DataFrame(data=data, columns=data[0].keys())
+print(df)
 
 
 
